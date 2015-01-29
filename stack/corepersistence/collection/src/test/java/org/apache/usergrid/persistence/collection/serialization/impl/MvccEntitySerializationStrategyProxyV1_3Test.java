@@ -20,16 +20,13 @@
 package org.apache.usergrid.persistence.collection.serialization.impl;
 
 
-import java.util.Iterator;
-
+import org.apache.usergrid.persistence.core.guice.V1ProxyImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
-import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.collection.guice.TestCollectionModule;
 import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
-import org.apache.usergrid.persistence.core.guice.PreviousImpl;
 import org.apache.usergrid.persistence.core.guice.ProxyImpl;
 import org.apache.usergrid.persistence.core.migration.data.MigrationInfoSerialization;
 import org.apache.usergrid.persistence.core.test.ITRunner;
@@ -37,26 +34,25 @@ import org.apache.usergrid.persistence.core.test.UseModules;
 
 import com.google.inject.Inject;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
 @RunWith( ITRunner.class )
 @UseModules( TestCollectionModule.class )
-public class MvccEntitySerializationStrategyProxyV1Test extends MvccEntitySerializationStrategyImplTest {
+public class MvccEntitySerializationStrategyProxyV1_3Test extends MvccEntitySerializationStrategyV2Test {
 
     @Inject
-    @ProxyImpl
+    @V1ProxyImpl
     private MvccEntitySerializationStrategy serializationStrategy;
+
 
     @Override
     protected MvccEntitySerializationStrategy getMvccEntitySerializationStrategy() {
         return serializationStrategy;
     }
 
-  @Inject
+
+    @Inject
     protected MigrationInfoSerialization migrationInfoSerialization;
 
     private int existingVersion;
@@ -70,8 +66,8 @@ public class MvccEntitySerializationStrategyProxyV1Test extends MvccEntitySerial
     public void setMigrationVersion() {
         existingVersion = migrationInfoSerialization.getVersion();
 
-        //set our version to 0 so it uses both impls of the proxy
-        migrationInfoSerialization.setVersion( MvccEntitySerializationStrategyProxyImpl.MIGRATION_VERSION-1 );
+        //set our new version, so that is will run through the new code
+        migrationInfoSerialization.setVersion( MvccEntitySerializationStrategyProxyV1Impl.MIGRATION_VERSION );
     }
 
 
@@ -81,5 +77,4 @@ public class MvccEntitySerializationStrategyProxyV1Test extends MvccEntitySerial
     public void reSetMigrationVersion() {
         migrationInfoSerialization.setVersion( existingVersion );
     }
-
 }

@@ -24,6 +24,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.usergrid.persistence.core.guice.CurrentImpl;
+import org.apache.usergrid.persistence.core.guice.PreviousImpl;
+import org.apache.usergrid.persistence.core.guice.V1Impl;
+import org.apache.usergrid.persistence.core.guice.V2Impl;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,8 +45,6 @@ import org.apache.usergrid.persistence.SimpleEntityRef;
 import org.apache.usergrid.persistence.collection.CollectionScope;
 import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
-import org.apache.usergrid.persistence.core.guice.CurrentImpl;
-import org.apache.usergrid.persistence.core.guice.PreviousImpl;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManagerImpl;
 import org.apache.usergrid.persistence.core.migration.data.MigrationInfoSerialization;
@@ -80,7 +82,7 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
      * Rule to do the resets we need
      */
     @Rule
-    public MigrationTestRule migrationTestRule = 
+    public MigrationTestRule migrationTestRule =
             new MigrationTestRule( app, CpSetup.getInjector() ,EntityDataMigration.class  );
 
     @Before
@@ -218,7 +220,7 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
         assertEquals( "All entities migrated", 0, savedEntities.size() );
 
 
-        //now visit all entities in the system again, and load them from the EM, 
+        //now visit all entities in the system again, and load them from the EM,
         // ensure we see everything we did in the v1 traversal
         AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
             .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
@@ -227,7 +229,7 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
                         final AllEntitiesInSystemObservable
                                 .ApplicationEntityGroup entity ) {
 
-                    final EntityManager em = emf.getEntityManager( 
+                    final EntityManager em = emf.getEntityManager(
                             entity.applicationScope.getApplication().getUuid() );
 
                     //add all versions from history to our comparison

@@ -19,13 +19,13 @@
 package org.apache.usergrid.persistence.graph.guice;
 
 
+import org.apache.usergrid.persistence.core.guice.V1Impl;
+import org.apache.usergrid.persistence.core.guice.V2Impl;
 import org.safehaus.guicyfig.GuicyFigModule;
 
 import org.apache.usergrid.persistence.core.astyanax.CassandraConfig;
 import org.apache.usergrid.persistence.core.consistency.TimeService;
 import org.apache.usergrid.persistence.core.consistency.TimeServiceImpl;
-import org.apache.usergrid.persistence.core.guice.CurrentImpl;
-import org.apache.usergrid.persistence.core.guice.PreviousImpl;
 import org.apache.usergrid.persistence.core.guice.ProxyImpl;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
 import org.apache.usergrid.persistence.core.migration.schema.Migration;
@@ -156,16 +156,16 @@ public class GraphModule extends AbstractModule {
         migrationBinding.addBinding().to( Key.get( NodeShardCounterSerialization.class ) );
 
         //Get the old version and the new one
-        migrationBinding.addBinding().to( Key.get( EdgeMetadataSerialization.class, PreviousImpl.class) );
-        migrationBinding.addBinding().to( Key.get( EdgeMetadataSerialization.class, CurrentImpl.class  ) );
+        migrationBinding.addBinding().to( Key.get( EdgeMetadataSerialization.class, V1Impl.class) );
+        migrationBinding.addBinding().to( Key.get( EdgeMetadataSerialization.class, V2Impl.class  ) );
 
 
         /**
          * Migrations of our edge meta serialization
          */
 
-        bind(EdgeMetadataSerialization.class).annotatedWith( PreviousImpl.class ).to( EdgeMetadataSerializationV1Impl.class  );
-        bind(EdgeMetadataSerialization.class).annotatedWith( CurrentImpl.class ).to( EdgeMetadataSerializationV2Impl.class  );
+        bind(EdgeMetadataSerialization.class).annotatedWith( V1Impl.class ).to( EdgeMetadataSerializationV1Impl.class  );
+        bind(EdgeMetadataSerialization.class).annotatedWith( V2Impl.class ).to( EdgeMetadataSerializationV2Impl.class  );
         bind(EdgeMetadataSerialization.class).annotatedWith( ProxyImpl.class ).to( EdgeMetadataSerializationProxyImpl.class  );
     }
 

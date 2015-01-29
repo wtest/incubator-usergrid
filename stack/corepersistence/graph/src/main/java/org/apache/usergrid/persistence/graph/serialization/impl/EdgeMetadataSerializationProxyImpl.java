@@ -27,8 +27,9 @@ import java.util.Collections;
 import java.util.Iterator;
 
 import org.apache.usergrid.persistence.core.astyanax.MultiTennantColumnFamilyDefinition;
-import org.apache.usergrid.persistence.core.guice.CurrentImpl;
-import org.apache.usergrid.persistence.core.guice.PreviousImpl;
+import org.apache.usergrid.persistence.core.guice.V1Impl;
+import org.apache.usergrid.persistence.core.guice.V2Impl;
+import org.apache.usergrid.persistence.core.guice.V3Impl;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.graph.Edge;
@@ -59,8 +60,8 @@ public class EdgeMetadataSerializationProxyImpl implements EdgeMetadataSerializa
      */
     @Inject
     public EdgeMetadataSerializationProxyImpl( final DataMigrationManager dataMigrationManager, final Keyspace keyspace,
-                                               @PreviousImpl final EdgeMetadataSerialization previous,
-                                               @CurrentImpl final EdgeMetadataSerialization current ) {
+                                               @V1Impl final EdgeMetadataSerialization previous,
+                                               @V2Impl final EdgeMetadataSerialization current) {
         this.dataMigrationManager = dataMigrationManager;
         this.keyspace = keyspace;
         this.previous = previous;

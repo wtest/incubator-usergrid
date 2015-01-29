@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import org.apache.usergrid.persistence.collection.MvccEntity;
 import org.apache.usergrid.persistence.collection.guice.TestCollectionModule;
 import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
-import org.apache.usergrid.persistence.core.guice.PreviousImpl;
+import org.apache.usergrid.persistence.core.guice.V1Impl;
 import org.apache.usergrid.persistence.core.test.ITRunner;
 import org.apache.usergrid.persistence.core.test.UseModules;
 
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 public class MvccEntitySerializationStrategyV1ImplTest extends MvccEntitySerializationStrategyImplTest {
 
     @Inject
-    @PreviousImpl
+    @V1Impl
     private MvccEntitySerializationStrategy serializationStrategy;
 
 
