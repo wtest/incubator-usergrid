@@ -23,6 +23,7 @@ package org.apache.usergrid.corepersistence.migration;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -114,11 +115,11 @@ public class GraphShardVersionMigrationIT extends AbstractCoreIT {
 
         //read everything in previous version format and put it into our types.
 
-        AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-                                     .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+        AllEntitiesInSystemObservable.getAllEntitiesInSystem(managerCache, 1000)
+                                     .doOnNext( new Action1<ApplicationEntityGroup>() {
                                          @Override
                                          public void call(
-                                                 final AllEntitiesInSystemObservable.ApplicationEntityGroup entity ) {
+                                                 final ApplicationEntityGroup entity ) {
 
                                              final GraphManager gm =
                                                      managerCache.getGraphManager( entity.applicationScope );
@@ -171,12 +172,11 @@ public class GraphShardVersionMigrationIT extends AbstractCoreIT {
 
 
         //now visit all nodes in the system and remove their types from the multi maps, it should be empty at the end
-        AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-                                     .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+        AllEntitiesInSystemObservable.getAllEntitiesInSystem(managerCache, 1000)
+                                     .doOnNext( new Action1<ApplicationEntityGroup>() {
                                                     @Override
                                                     public void call(
-                                                            final AllEntitiesInSystemObservable
-                                                                    .ApplicationEntityGroup entity ) {
+                                                            final ApplicationEntityGroup entity ) {
 
                                                         final GraphManager gm =
                                                                 managerCache.getGraphManager( entity.applicationScope );

@@ -23,6 +23,7 @@ package org.apache.usergrid.corepersistence.migration;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,7 +70,7 @@ public class EntityTypeMappingMigrationIT extends AbstractCoreIT {
      * Rule to do the resets we need
      */
     @Rule
-    public MigrationTestRule migrationTestRule = new MigrationTestRule( 
+    public MigrationTestRule migrationTestRule = new MigrationTestRule(
             app, CpSetup.getInjector() ,EntityTypeMappingMigration.class  );
 
 
@@ -114,8 +115,8 @@ public class EntityTypeMappingMigrationIT extends AbstractCoreIT {
         keyspace.truncateColumnFamily( MapSerializationImpl.MAP_ENTRIES );
         keyspace.truncateColumnFamily( MapSerializationImpl.MAP_KEYS );
 
-        app.createApplication( 
-                GraphShardVersionMigrationIT.class.getSimpleName()+ UUIDGenerator.newTimeUUID(), 
+        app.createApplication(
+                GraphShardVersionMigrationIT.class.getSimpleName()+ UUIDGenerator.newTimeUUID(),
                 "migrationTest" );
 
 
@@ -125,11 +126,11 @@ public class EntityTypeMappingMigrationIT extends AbstractCoreIT {
         entityTypeMappingMigration.migrate( progressObserver );
 
 
-        AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-            .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+        AllEntitiesInSystemObservable.getAllEntitiesInSystem(managerCache, 1000)
+            .doOnNext( new Action1<ApplicationEntityGroup>() {
                 @Override
                 public void call(
-                        final AllEntitiesInSystemObservable.ApplicationEntityGroup entity ) {
+                        final ApplicationEntityGroup entity ) {
                     //ensure that each one has a type
 
                     final EntityManager em = emf.getEntityManager(

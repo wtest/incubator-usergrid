@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.usergrid.persistence.collection.mvcc.MvccEntityMigrationStrategy;
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -132,10 +133,10 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
         //using a test system, and it's not a huge amount of data, otherwise we'll overflow.
 
         AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-            .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+            .doOnNext( new Action1<ApplicationEntityGroup>() {
                 @Override
                 public void call(
-                        final AllEntitiesInSystemObservable.ApplicationEntityGroup entity ) {
+                        final ApplicationEntityGroup entity ) {
 
                     //add all versions from history to our comparison
                     for ( final Id id : entity.entityIds ) {
@@ -184,11 +185,10 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
 
         //now visit all entities in the system again, load them from v2, and ensure they're the same
         AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-            .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+            .doOnNext( new Action1<ApplicationEntityGroup>() {
                 @Override
                 public void call(
-                        final AllEntitiesInSystemObservable
-                                .ApplicationEntityGroup entity ) {
+                        final ApplicationEntityGroup entity ) {
                     //add all versions from history to our comparison
                     for ( final Id id : entity.entityIds ) {
 
@@ -221,11 +221,10 @@ public class EntityDataMigrationIT extends AbstractCoreIT {
         //now visit all entities in the system again, and load them from the EM,
         // ensure we see everything we did in the v1 traversal
         AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 )
-            .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+            .doOnNext( new Action1<ApplicationEntityGroup>() {
                 @Override
                 public void call(
-                        final AllEntitiesInSystemObservable
-                                .ApplicationEntityGroup entity ) {
+                        final ApplicationEntityGroup entity ) {
 
                     final EntityManager em = emf.getEntityManager(
                             entity.applicationScope.getApplication().getUuid() );

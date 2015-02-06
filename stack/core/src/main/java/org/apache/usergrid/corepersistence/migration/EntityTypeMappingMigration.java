@@ -23,6 +23,7 @@ package org.apache.usergrid.corepersistence.migration;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,11 +61,11 @@ public class EntityTypeMappingMigration implements DataMigration {
         final AtomicLong atomicLong = new AtomicLong();
 
         AllEntitiesInSystemObservable.getAllEntitiesInSystem(managerCache, 1000 )
-                                     .doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+                                     .doOnNext( new Action1<ApplicationEntityGroup>() {
 
 
                                          @Override
-                                         public void call( final AllEntitiesInSystemObservable.ApplicationEntityGroup applicationEntityGroup ) {
+                                         public void call( final ApplicationEntityGroup applicationEntityGroup ) {
 
                                              final MapScope ms = CpNamingUtils.getEntityTypeMapScope( applicationEntityGroup.applicationScope.getApplication() );
 

@@ -23,6 +23,7 @@ package org.apache.usergrid.corepersistence.rx;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,9 +93,9 @@ public class AllEntitiesInSystemObservableIT extends AbstractCoreIT {
 
         final GraphManager gm = managerCache.getGraphManager( scope );
 
-        AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 ).doOnNext( new Action1<AllEntitiesInSystemObservable.ApplicationEntityGroup>() {
+        AllEntitiesInSystemObservable.getAllEntitiesInSystem( managerCache, 1000 ).doOnNext( new Action1<ApplicationEntityGroup>() {
             @Override
-            public void call( final AllEntitiesInSystemObservable.ApplicationEntityGroup entity ) {
+            public void call( final ApplicationEntityGroup entity ) {
 
                 assertNotNull(entity);
                 assertNotNull(entity.applicationScope);
