@@ -20,25 +20,20 @@
 package org.apache.usergrid.persistence.collection.serialization.impl;
 
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.UUID;
-
-import org.apache.usergrid.persistence.collection.CollectionScope;
-import org.apache.usergrid.persistence.collection.EntitySet;
-import org.apache.usergrid.persistence.collection.MvccEntity;
-import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
-import org.apache.usergrid.persistence.core.astyanax.MultiTennantColumnFamilyDefinition;
+import org.apache.usergrid.persistence.collection.mvcc.MvccEntityMigrationStrategy;
 import org.apache.usergrid.persistence.core.guice.V1Impl;
 import org.apache.usergrid.persistence.core.guice.V2Impl;
+import org.apache.usergrid.persistence.core.migration.data.DataMigration;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
-import org.apache.usergrid.persistence.model.entity.Id;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.astyanax.Keyspace;
-import com.netflix.astyanax.MutationBatch;
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
+import org.apache.usergrid.persistence.core.scope.ApplicationScope;
+import org.apache.usergrid.persistence.model.entity.Id;
+import rx.Observable;
+import rx.functions.Func1;
 
 
 /**
@@ -47,9 +42,8 @@ import com.netflix.astyanax.MutationBatch;
  * it will be available from the new source
  */
 @Singleton
-public class MvccEntitySerializationStrategyProxyV1Impl extends MvccEntitySerializationStrategyProxy {
+public class MvccEntitySerializationStrategyProxyV1Impl extends MvccEntitySerializationStrategyProxy implements MvccEntityMigrationStrategy {
 
-    public static final int MIGRATION_VERSION = 3;
 
     @Inject
     public MvccEntitySerializationStrategyProxyV1Impl(final DataMigrationManager dataMigrationManager,
@@ -60,7 +54,13 @@ public class MvccEntitySerializationStrategyProxyV1Impl extends MvccEntitySerial
     }
 
     @Override
-    public int getMigrationVersion() {
-        return MIGRATION_VERSION;
+    public MigrationRelationship<MvccEntitySerializationStrategy> getMigration() {
+        return new MigrationRelationship<>(previous,current);
     }
+
+    @Override
+    public int getMigrationVersion() {
+        return V2Impl.MIGRATION_VERSION;
+    }
+
 }

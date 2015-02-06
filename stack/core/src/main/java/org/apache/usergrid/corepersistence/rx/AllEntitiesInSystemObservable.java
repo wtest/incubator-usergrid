@@ -23,6 +23,7 @@ package org.apache.usergrid.corepersistence.rx;
 import java.util.List;
 
 import org.apache.usergrid.corepersistence.ManagerCache;
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.core.scope.ApplicationScopeImpl;
 import org.apache.usergrid.persistence.graph.GraphManager;
@@ -85,17 +86,5 @@ public class AllEntitiesInSystemObservable {
     }
 
 
-    /**
-     * Get the entity data.  Immutable bean for fast access
-     */
-    public static final class ApplicationEntityGroup {
-        public final ApplicationScope applicationScope;
-        public final List<Id> entityIds;
 
-
-        public ApplicationEntityGroup( final ApplicationScope applicationScope, final List<Id> entityIds ) {
-            this.applicationScope = applicationScope;
-            this.entityIds = entityIds;
-        }
-    }
 }

@@ -31,6 +31,7 @@ import org.apache.usergrid.persistence.map.MapScope;
 import org.apache.usergrid.persistence.map.impl.MapScopeImpl;
 import org.apache.usergrid.persistence.model.entity.Id;
 import org.apache.usergrid.persistence.model.entity.SimpleId;
+import rx.functions.Func1;
 
 
 /**
@@ -70,6 +71,21 @@ public class CpNamingUtils {
      * The name of the map that holds our entity id->type mapping
      */
     public static String TYPES_BY_UUID_MAP = "zzz_typesbyuuid_zzz";
+
+    /**
+     * Returns a function to retreive collection scope
+     * @param applicationScope
+     * @return
+     */
+    public static Func1<Id,? extends ApplicationScope> getCollectionScopeByEntityIdFunc1(final ApplicationScope applicationScope){
+        Func1<Id,ApplicationScope> func = new Func1<Id, ApplicationScope>() {
+            @Override
+            public ApplicationScope call(Id id) {
+                return CpNamingUtils.getCollectionScopeNameFromEntityType(applicationScope.getApplication(), id.getType());
+            }
+        };
+        return func;
+    }
 
 
     /**

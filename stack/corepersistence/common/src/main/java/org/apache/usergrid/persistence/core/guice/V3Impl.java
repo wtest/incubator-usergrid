@@ -34,4 +34,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @BindingAnnotation
 @Target({ FIELD, PARAMETER, METHOD }) @Retention(RUNTIME)
-public @interface V3Impl {}
+public @interface V3Impl {
+    public static final int MIGRATION_VERSION = 4;
+}

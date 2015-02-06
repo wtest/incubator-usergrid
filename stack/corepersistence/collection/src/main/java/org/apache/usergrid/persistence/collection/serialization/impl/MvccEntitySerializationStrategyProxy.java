@@ -19,18 +19,25 @@ package org.apache.usergrid.persistence.collection.serialization.impl;
 import com.google.inject.Inject;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.MutationBatch;
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.collection.CollectionScope;
 import org.apache.usergrid.persistence.collection.EntitySet;
 import org.apache.usergrid.persistence.collection.MvccEntity;
-import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
+import org.apache.usergrid.persistence.collection.mvcc.MvccEntityMigrationStrategy;
 import org.apache.usergrid.persistence.core.astyanax.MultiTennantColumnFamilyDefinition;
+import org.apache.usergrid.persistence.core.migration.data.DataMigration;
+import org.apache.usergrid.persistence.core.migration.data.DataMigrationException;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
+import org.apache.usergrid.persistence.core.migration.schema.MigrationStrategy;
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
+import org.apache.usergrid.persistence.core.scope.ApplicationScope;
 import org.apache.usergrid.persistence.model.entity.Id;
+import org.apache.usergrid.persistence.model.util.UUIDGenerator;
+import rx.Observable;
+import rx.functions.Func1;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -38,13 +45,13 @@ import java.util.UUID;
  * migration data goes to both sources and is read from the old source. After the ugprade completes,
  * it will be available from the new source
  */
-public abstract class MvccEntitySerializationStrategyProxy implements MvccEntitySerializationStrategy {
+public  abstract class MvccEntitySerializationStrategyProxy implements MvccEntitySerializationStrategy, MvccEntityMigrationStrategy {
 
 
     private final DataMigrationManager dataMigrationManager;
-    private final Keyspace keyspace;
-    private final MvccEntitySerializationStrategy previous;
-    private final MvccEntitySerializationStrategy current;
+    protected final Keyspace keyspace;
+    protected final MvccEntitySerializationStrategy previous;
+    protected final MvccEntitySerializationStrategy current;
 
 
     @Inject
@@ -135,8 +142,6 @@ public abstract class MvccEntitySerializationStrategyProxy implements MvccEntity
         return current.delete( context, entityId, version );
     }
 
-    public abstract int getMigrationVersion();
-
     /**
      * Return true if we're on an old version
      */
@@ -149,5 +154,73 @@ public abstract class MvccEntitySerializationStrategyProxy implements MvccEntity
     public Collection<MultiTennantColumnFamilyDefinition> getColumnFamilies() {
         return Collections.emptyList();
     }
+
+    @Override
+    public Observable<Long> executeMigration(final Observable<MvccEntity> entityObservable,final ApplicationEntityGroup applicationEntityGroup, final DataMigration.ProgressObserver observer, final Func1<Id,? extends ApplicationScope> getCollectionScopeFromEntityId) {
+        final AtomicLong atomicLong = new AtomicLong();
+        final MutationBatch totalBatch = keyspace.prepareMutationBatch();
+
+        final List<Id> entityIds = applicationEntityGroup.entityIds;
+
+        final UUID now = UUIDGenerator.newTimeUUID();
+
+        //go through each entity in the system, and load it's entire
+        // history
+        return Observable.from(entityIds)
+
+            .map(new Func1<Id, Id>() {
+                @Override
+                public Id call(Id entityId) {
+
+                    ApplicationScope applicationScope = getCollectionScopeFromEntityId.call(entityId);
+
+                    if (!(applicationScope instanceof CollectionScope)) {
+                        throw new IllegalArgumentException("getCollectionScopeFromEntityId must return a collection scope");
+                    }
+                    CollectionScope currentScope = (CollectionScope) applicationScope;
+                    MigrationStrategy.MigrationRelationship<MvccEntitySerializationStrategy> migration = getMigration();
+                    //for each element in the history in the previous version,
+                    // copy it to the CF in v2
+                    Iterator<MvccEntity> allVersions = migration.from()
+                        .loadDescendingHistory(currentScope, entityId, now,
+                            1000);
+
+                    while (allVersions.hasNext()) {
+                        final MvccEntity version = allVersions.next();
+
+                        final MutationBatch versionBatch =
+                            migration.to().write(currentScope, version);
+
+                        totalBatch.mergeShallow(versionBatch);
+
+                        if (atomicLong.incrementAndGet() % 50 == 0) {
+                            executeBatch(totalBatch, observer, atomicLong);
+                        }
+                    }
+                    executeBatch(totalBatch, observer, atomicLong);
+                    return entityId;
+                }
+            })
+            .map(new Func1<Id, Long>() {
+                @Override
+                public Long call(Id id) {
+                    executeBatch(totalBatch, observer, atomicLong);
+                    return atomicLong.get();
+                }
+            });
+    }
+
+    protected void executeBatch( final MutationBatch batch, final DataMigration.ProgressObserver po, final AtomicLong count ) {
+        try {
+            batch.execute();
+
+            po.update( getMigrationVersion(), "Finished copying " + count + " entities to the new format" );
+        }
+        catch ( ConnectionException e ) {
+            po.failed( getMigrationVersion(), "Failed to execute mutation in cassandra" );
+            throw new DataMigrationException( "Unable to migrate batches ", e );
+        }
+    }
+
 }
 

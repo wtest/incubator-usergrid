@@ -25,29 +25,39 @@ package org.apache.usergrid.persistence.graph.serialization.impl;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
+import com.netflix.astyanax.connectionpool.exceptions.ConnectionException;
 import org.apache.usergrid.persistence.core.astyanax.MultiTennantColumnFamilyDefinition;
 import org.apache.usergrid.persistence.core.guice.V1Impl;
 import org.apache.usergrid.persistence.core.guice.V2Impl;
-import org.apache.usergrid.persistence.core.guice.V3Impl;
+import org.apache.usergrid.persistence.core.migration.data.DataMigration;
 import org.apache.usergrid.persistence.core.migration.data.DataMigrationManager;
+import org.apache.usergrid.persistence.core.scope.ApplicationEntityGroup;
 import org.apache.usergrid.persistence.core.scope.ApplicationScope;
-import org.apache.usergrid.persistence.graph.Edge;
-import org.apache.usergrid.persistence.graph.SearchEdgeType;
-import org.apache.usergrid.persistence.graph.SearchIdType;
+import org.apache.usergrid.persistence.graph.*;
+import org.apache.usergrid.persistence.graph.impl.SimpleSearchByEdgeType;
+import org.apache.usergrid.persistence.graph.impl.SimpleSearchEdgeType;
 import org.apache.usergrid.persistence.graph.serialization.EdgeMetadataSerialization;
+import org.apache.usergrid.persistence.graph.serialization.EdgeMigrationStrategy;
 import org.apache.usergrid.persistence.model.entity.Id;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.MutationBatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.functions.Action1;
+import rx.functions.Func1;
 
 
 @Singleton
-public class EdgeMetadataSerializationProxyImpl implements EdgeMetadataSerialization {
+public class EdgeMetadataSerializationProxyImpl implements EdgeMetadataSerialization, EdgeMigrationStrategy {
 
-    public static final int MIGRATION_VERSION = 2;
+    private static final Logger logger = LoggerFactory.getLogger(EdgeMetadataSerializationProxyImpl.class);
 
     private final DataMigrationManager dataMigrationManager;
     private final Keyspace keyspace;
@@ -59,9 +69,9 @@ public class EdgeMetadataSerializationProxyImpl implements EdgeMetadataSerializa
      * Handles routing data to the right implementation, based on the current system migration version
      */
     @Inject
-    public EdgeMetadataSerializationProxyImpl( final DataMigrationManager dataMigrationManager, final Keyspace keyspace,
-                                               @V1Impl final EdgeMetadataSerialization previous,
-                                               @V2Impl final EdgeMetadataSerialization current) {
+    public EdgeMetadataSerializationProxyImpl(final DataMigrationManager dataMigrationManager, final Keyspace keyspace,
+                                              @V1Impl final EdgeMetadataSerialization previous,
+                                              @V2Impl final EdgeMetadataSerialization current) {
         this.dataMigrationManager = dataMigrationManager;
         this.keyspace = keyspace;
         this.previous = previous;
@@ -274,4 +284,83 @@ public class EdgeMetadataSerializationProxyImpl implements EdgeMetadataSerializa
     private boolean isOldVersion() {
         return dataMigrationManager.getCurrentVersion() < MIGRATION_VERSION;
     }
+
+    @Override
+    public MigrationRelationship<EdgeMetadataSerialization> getMigration() {
+        return new MigrationRelationship<>(previous,current);
+    }
+
+    @Override
+    public int getMigrationVersion() {
+        return EdgeMigrationStrategy.MIGRATION_VERSION;
+    }
+
+    @Override
+    public Observable<Long> executeMigration(final Observable<Edge> edgesFromSource ,final ApplicationEntityGroup applicationEntityGroup,
+                                             final DataMigration.ProgressObserver observer,
+                                             Func1<Id, ? extends ApplicationScope> getScopeFromEntityId) {
+        final AtomicLong counter = new AtomicLong();
+        rx.Observable o =
+            Observable
+                .from(applicationEntityGroup.entityIds)
+
+            .flatMap(new Func1<Id, Observable<List<Edge>>>() {
+                //for each id in the group, get it's edges
+                @Override
+                public Observable<List<Edge>> call(final Id id) {
+                    logger.info("Migrating edges from node {} in scope {}", id,
+                        applicationEntityGroup.applicationScope);
+
+
+                    //get each edge from this node as a source
+                    return edgesFromSource
+
+                        //for each edge, re-index it in v2  every 1000 edges or less
+                        .buffer(1000)
+                        .doOnNext(new Action1<List<Edge>>() {
+                            @Override
+                            public void call(List<Edge> edges) {
+                                final MutationBatch batch =
+                                    keyspace.prepareMutationBatch();
+
+                                for (Edge edge : edges) {
+                                    logger.info("Migrating meta for edge {}", edge);
+                                    final MutationBatch edgeBatch = getMigration().to()
+                                        .writeEdge(
+                                            applicationEntityGroup
+                                                .applicationScope,
+                                            edge);
+                                    batch.mergeShallow(edgeBatch);
+                                }
+
+                                try {
+                                    batch.execute();
+                                } catch (ConnectionException e) {
+                                    throw new RuntimeException(
+                                        "Unable to perform migration", e);
+                                }
+
+                                //update the observer so the admin can see it
+                                final long newCount =
+                                    counter.addAndGet(edges.size());
+
+                                observer.update(getMigrationVersion(), String.format(
+                                    "Currently running.  Rewritten %d edge types",
+                                    newCount));
+                            }
+                        });
+                }
+
+
+            })
+            .map(new Func1<List<Edge>, Long>() {
+                @Override
+                public Long call(List<Edge> edges) {
+                    return counter.get();
+                }
+            });
+        return o;
+    }
+
+
 }

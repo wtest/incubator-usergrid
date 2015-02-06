@@ -18,9 +18,8 @@ package org.apache.usergrid.persistence.collection.serialization.impl;
 
 import com.google.inject.Inject;
 import org.apache.usergrid.persistence.collection.guice.TestCollectionModule;
-import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
 import org.apache.usergrid.persistence.core.guice.ProxyImpl;
-import org.apache.usergrid.persistence.core.guice.V1ProxyImpl;
+import org.apache.usergrid.persistence.core.guice.V3Impl;
 import org.apache.usergrid.persistence.core.migration.data.MigrationInfoSerialization;
 import org.apache.usergrid.persistence.core.test.ITRunner;
 import org.apache.usergrid.persistence.core.test.UseModules;
@@ -63,7 +62,7 @@ public class MvccEntitySerializationStrategyProxyV2Test extends MvccEntitySerial
         existingVersion = migrationInfoSerialization.getVersion();
 
         //set our new version, so that is will run through the new code
-        migrationInfoSerialization.setVersion( MvccEntitySerializationStrategyProxyV2Impl.MIGRATION_VERSION );
+        migrationInfoSerialization.setVersion( V3Impl.MIGRATION_VERSION );
     }
 
 

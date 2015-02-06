@@ -18,7 +18,7 @@
 package org.apache.usergrid.persistence.collection.serialization.impl;
 
 
-import org.apache.usergrid.persistence.collection.mvcc.MvccEntitySerializationStrategy;
+import org.apache.usergrid.persistence.collection.mvcc.MvccEntityMigrationStrategy;
 import org.apache.usergrid.persistence.collection.mvcc.MvccLogEntrySerializationStrategy;
 import org.apache.usergrid.persistence.collection.serialization.UniqueValueSerializationStrategy;
 import org.apache.usergrid.persistence.core.guice.*;
@@ -46,15 +46,15 @@ public class SerializationModule extends AbstractModule {
         bind( MvccEntitySerializationStrategy.class ).annotatedWith( V2Impl.class )
                                                      .to(MvccEntitySerializationStrategyV2Impl.class);
         bind( MvccEntitySerializationStrategy.class ).annotatedWith( V3Impl.class )
-                                                    .to(MvccEntitySerializationStrategyV3Impl.class);
-        bind( MvccEntitySerializationStrategy.class ).annotatedWith( PreviousImpl.class )
-                                                    .to(MvccEntitySerializationStrategyProxyV2Impl.class);
-        bind( MvccEntitySerializationStrategy.class ).annotatedWith( CurrentImpl.class )
-                                                    .to(MvccEntitySerializationStrategyV3Impl.class);
+                                                     .to(MvccEntitySerializationStrategyV3Impl.class);
+
         bind(MvccEntitySerializationStrategy.class).annotatedWith( V1ProxyImpl.class )
-                                                    .to( MvccEntitySerializationStrategyProxyV1Impl.class );
-        bind( MvccEntitySerializationStrategy.class ).annotatedWith( ProxyImpl.class )
-                                                    .to( MvccEntitySerializationStrategyProxyV2Impl.class );
+                                                     .to(MvccEntitySerializationStrategyProxyV1Impl.class);
+        bind(MvccEntitySerializationStrategy.class ).annotatedWith( ProxyImpl.class )
+                                                     .to(MvccEntitySerializationStrategyProxyV2Impl.class);
+
+        bind( MvccEntityMigrationStrategy.class ).to(MvccEntitySerializationStrategyProxyV2Impl.class);
+
         bind( MvccLogEntrySerializationStrategy.class ).to( MvccLogEntrySerializationStrategyImpl.class );
         bind( UniqueValueSerializationStrategy.class ).to( UniqueValueSerializationStrategyImpl.class );
 
